@@ -1,0 +1,110 @@
+import math
+
+def get_user_input():
+    """Get financial and loan related info"""
+    print("Welcome to the Loan  Qualification.\n")
+
+    income = float(input("Enter your yearly income (USD): "))
+    credit_score = int(input("Enter your credit score: "))
+    monthly_debt = float(input("Enter your monthly debt (USD): "))
+    loan_type = input("What type of loan are you looking for? (mortgage/personal): ").lower()
+
+    loan_term = int(input("Enter loan term in years (e.g., 30): "))
+
+    down_payment = 0
+    if loan_type == "mortgage":
+        down_payment = float(input("Enter your available down payment amount (USD): "))
+
+    return income, credit_score, monthly_debt, loan_type, loan_term, down_payment
+
+def calculate_dti(income, monthly_debt):
+    """Calculate Debt to Income ratio."""
+    monthly_income = income / 12
+    return monthly_debt / monthly_income
+
+def estimate_interest_rate(credit_score, loan_type):
+    """Estimate interest rate based on credit score."""
+    if loan_type == "mortgage":
+        if credit_score >= 740:
+            return 0.05
+        elif credit_score >= 700:
+            return 0.06
+        elif credit_score >= 640:
+            return 0.07
+        else:
+            return 0.08
+# Personal loan        
+    else:
+        if credit_score >= 740:
+            return 0.08
+        elif credit_score >= 700:
+            return 0.12
+        elif credit_score >= 640:
+            return 0.16
+        else:
+            return 0.22
+        
+def calculate_monthly_payment(principal, interest_rate, loan_term_years):
+    """Estimate monthly loan payment using the amortization formula:
+    M = P[r(1+r)^n] / [(1+r)^n - 1]"""
+    monthly_rate = interest_rate / 12
+    months = loan_term_years * 12
+    if monthly_rate == 0:
+        return principal / months
+    numerator = principal * monthly_rate * (1 + monthly_rate) ** months
+    denominator = (1 + monthly_rate) ** months - 1
+    return numerator / denominator
+
+def check_mortgage_qualification(income, credit_score, monthly_debt, loan_term, down_payment):
+    dti = calculate_dti(income, monthly_debt)
+    interest_rate = estimate_interest_rate(credit_score, "mortgage")
+# Qualification criteria
+    if credit_score >= 620 and dti <= 0.43 and down_payment >= 10000:
+# Estimate loan amount user can afford (simplified rule)
+        max_home_price = income * 4.5
+        mortgage_amount = max_home_price - down_payment
+        monthly_payment = calculate_monthly_payment(mortgage_amount, interest_rate, loan_term)
+        return True, mortgage_amount, monthly_payment, interest_rate
+    return False, 0, 0, interest_rate
+
+def check_personal_loan_qualification(income, credit_score, monthly_debt, loan_term):
+    dti = calculate_dti(income, monthly_debt)
+    interest_rate = estimate_interest_rate(credit_score, "personal")
+# Qualification criteria
+    if credit_score >= 580 and dti <= 0.5:
+        loan_amount = income * 0.3
+        monthly_payment = calculate_monthly_payment(loan_amount, interest_rate, loan_term)
+        return True, loan_amount, monthly_payment, interest_rate
+    return False, 0, 0, interest_rate
+
+def main():
+# Gather all input data
+    income, credit_score, monthly_debt, loan_type, loan_term, down_payment = get_user_input()
+
+    if loan_type == "mortgage":
+            qualified, amount, monthly_payment, rate = check_mortgage_qualification(
+                income, credit_score, monthly_debt, loan_term, down_payment)
+    elif loan_type == "personal":
+            qualified, amount, monthly_payment, rate = check_personal_loan_qualification(
+                income, credit_score, monthly_debt, loan_term)
+    else:
+            print("\n Invalid loan type entered. Pleas choose 'mortgage' or 'personal'.")
+            return
+    # Output result
+    print("\n================== Loan Summary ==================")
+    print(f"Loan Type:          {loan_type.capitalize()}")
+    print(f"Qualified:          {'Yes' if qualified else 'No'}")
+    print(f"Credit Score:       {credit_score}")
+    print(f"Estimated Rate:     {rate * 100:.2f}%")
+    print(f"Loan Term:          {loan_term} years")
+
+    if qualified:
+        print(f"Loan Amount:         ${amount:,.2f}")
+        print(f"Monthly Payment:     ${monthly_payment:,.2f}")
+        if loan_type == "mortgage":
+            print(f"Down Payment:         ${down_payment:,.2f}")
+    else:
+        print("We're sorry, you likely do not qualify based on theinformation provided.")
+
+if __name__ == "__main__":
+    main()
